@@ -67,7 +67,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-svh flex flex-col bg-[#0b0d11]">
+    <div className="min-h-svh flex flex-col bg-[#1d0f05]">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/5 backdrop-blur-md border-b border-white/10">
         <div className="mx-auto w-full max-w-3xl px-4 py-3 flex items-center jucstify-center">
@@ -156,7 +156,7 @@ function MessageBubble({ role, type, text }) {
   if (type === "chart") {
     return (
       <div className="mb-3 flex justify-start">
-        <div className="w-full max-w-[95%] rounded-2xl   p-2">
+        <div className="w-full max-w-[100%] rounded-2xl   p-2">
           <ChartView />
         </div>
       </div>
