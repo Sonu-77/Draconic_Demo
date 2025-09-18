@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineStyle } from "lightweight-charts";
 import { DATA } from "@/data/data";
+import ChartView from "@/components/ChartView";
 
 const round1 = (n) => (typeof n === "number" ? Number(n.toFixed(2)) : n);
 const pct = (a, b) => (a == null || b == null ? null : ((a - b) / b) * 100);
@@ -179,7 +180,9 @@ export default function Home() {
           {/* Chart */}
           <div ref={containerRef} className="w-full h-[420px] rounded-xl overflow-hidden" />
         </div>
+     <ChartView/>
       </div>
+      
     </main>
   );
 }
