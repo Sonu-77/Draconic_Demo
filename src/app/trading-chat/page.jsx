@@ -78,7 +78,7 @@ export default function ChatPage() {
 
       {/* Messages */}
       <main ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth [scrollbar-gutter:stable]">
-        <div className="mx-auto w-full max-w-4xl px-4 pb-28 pt-4">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4">
           {messages.map((m) => (
             <MessageBubble key={m.id} {...m} />
           ))}

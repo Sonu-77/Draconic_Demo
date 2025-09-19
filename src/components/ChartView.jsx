@@ -102,12 +102,15 @@ function makeZoneLabel(text) {
 export default function ChartView() {
   const containerRef = useRef(null);
   const [hover, setHover] = useState(null);
+  const [showOverlays, setShowOverlays] = useState(false);
 
   const [symbol, setSymbol] = useState(DATA[0]?.chart_data.symbol || "");
   const [timeframe, setTimeframe] = useState("1h");
 
   const symbolEntry = DATA.find((d) => d.chart_data.symbol === symbol);
   const chartData = symbolEntry?.chart_data?.[timeframe];
+  console.log("chart ", chartData);
+  console.log("symbolEntry ", symbolEntry);
 
   // sector cards
   const highlights = symbolEntry?.chart_data?.highlights;
@@ -116,6 +119,8 @@ export default function ChartView() {
   const financial = symbolEntry?.chart_data?.financial;
   const banking = symbolEntry?.chart_data?.banking;
   const pharma = symbolEntry?.chart_data?.pharma;
+
+  console.log("highlights", highlights);
 
   // V/A/M
   const metricVel = chartData?.metrics?.velocity || [];
@@ -230,7 +235,9 @@ export default function ChartView() {
       const price = a.points?.[0]?.price;
       if (typeof price !== "number") return;
       const color =
-        a.annotation_type === "support_band" ? SR_COLOR.support : SR_COLOR.resistance;
+        a.annotation_type === "support_band"
+          ? SR_COLOR.support
+          : SR_COLOR.resistance;
 
       const line = series.createPriceLine({
         price: round1(price),
@@ -241,6 +248,11 @@ export default function ChartView() {
       });
       srLines.push(line);
     });
+    if (!showOverlays) {
+      try {
+        srLines.forEach((ln) => series.removePriceLine?.(ln));
+      } catch (_) {}
+    }
 
     // 2) overlay for line-pills
     const srOverlay = document.createElement("div");
@@ -249,6 +261,7 @@ export default function ChartView() {
     srOverlay.style.pointerEvents = "none";
     srOverlay.style.zIndex = "3";
     el.appendChild(srOverlay);
+    srOverlay.style.display = showOverlays ? "block" : "none";
 
     const makeSRPill = (text, bg) => {
       const pill = document.createElement("div");
@@ -270,7 +283,10 @@ export default function ChartView() {
     const srPills = srAnns.map((a) => {
       const isSupport = a.annotation_type === "support_band";
       const bg = isSupport ? SR_COLOR.support : SR_COLOR.resistance;
-      const pill = makeSRPill(a.text || (isSupport ? "Support" : "Resistance"), bg);
+      const pill = makeSRPill(
+        a.text || (isSupport ? "Support" : "Resistance"),
+        bg
+      );
       srOverlay.appendChild(pill);
       return { pill, price: a.points?.[0]?.price };
     });
@@ -297,7 +313,9 @@ export default function ChartView() {
     };
 
     setTimeout(placeSR, 0);
-    const unsubSR = chart.timeScale().subscribeVisibleTimeRangeChange?.(placeSR);
+    const unsubSR = chart
+      .timeScale()
+      .subscribeVisibleTimeRangeChange?.(placeSR);
     const roSR = new ResizeObserver(() => {
       chart.applyOptions({ width: el.clientWidth });
       placeSR();
@@ -311,6 +329,7 @@ export default function ChartView() {
     overlay.style.zIndex = "999"; // ensure over canvases
     overlay.style.pointerEvents = "none"; // children opt-in
     el.appendChild(overlay);
+    overlay.style.display = showOverlays ? "block" : "none";
 
     const objects = [];
 
@@ -430,21 +449,44 @@ export default function ChartView() {
 
     return () => {
       // cleanup SR
-      try { unsubSR && chart.timeScale().unsubscribeVisibleTimeRangeChange?.(placeSR); } catch {}
-      try { roSR.disconnect(); } catch {}
-      try { el.removeChild(srOverlay); } catch {}
+      try {
+        unsubSR &&
+          chart.timeScale().unsubscribeVisibleTimeRangeChange?.(placeSR);
+      } catch {}
+      try {
+        roSR.disconnect();
+      } catch {}
+      try {
+        el.removeChild(srOverlay);
+      } catch {}
 
       // cleanup overlay + observers
-      try { chart.unsubscribeCrosshairMove(onMove); } catch {}
+      try {
+        chart.unsubscribeCrosshairMove(onMove);
+      } catch {}
       try {
         unsubRange &&
           chart.timeScale().unsubscribeVisibleTimeRangeChange?.(place);
       } catch {}
-      try { ro.disconnect(); } catch {}
-      try { el.removeChild(overlay); } catch {}
-      try { chart.remove(); } catch {}
+      try {
+        ro.disconnect();
+      } catch {}
+      try {
+        el.removeChild(overlay);
+      } catch {}
+      try {
+        chart.remove();
+      } catch {}
     };
-  }, [chartData, timeframe, supports, resistances, testArea, swingAnns]);
+  }, [
+    chartData,
+    timeframe,
+    supports,
+    resistances,
+    testArea,
+    swingAnns,
+    showOverlays,
+  ]);
 
   const last = chartData?.candles?.at?.(-1);
   const show = hover || last;
@@ -479,6 +521,53 @@ export default function ChartView() {
             <option value="15m">15m</option>
             <option value="5m">5m</option>
           </select>
+          <label className="ml-auto inline-flex items-center gap-3 select-none">
+            <span className="text-xs text-gray-300/80">
+              Show Support & Resistance
+            </span>
+
+            <span
+              role="switch"
+              aria-checked={showOverlays}
+              tabIndex={0}
+              onClick={() => setShowOverlays((s) => !s)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setShowOverlays((s) => !s);
+                }
+              }}
+              className={[
+                "group relative inline-flex h-6 w-12 cursor-pointer items-center rounded-full",
+                "ring-1 transition-all duration-200",
+                showOverlays
+                  ? "bg-amber-500/90 ring-amber-300/30 shadow-[0_0_12px_rgba(245,158,11,0.45)]"
+                  : "bg-[#232833] ring-white/5",
+              ].join(" ")}
+            >
+              {/* knob */}
+              <span
+                className={[
+                  "absolute left-1 h-4 w-4 rounded-full bg-white shadow",
+                  "transition-transform duration-200",
+                  showOverlays ? "translate-x-6" : "translate-x-0",
+                ].join(" ")}
+              />
+
+              {/* ON/OFF micro-label */}
+              <span
+                className={[
+                  "absolute right-1 text-[10px] font-semibold tracking-wide",
+                  "transition-opacity duration-200",
+                  showOverlays
+                    ? "opacity-90 text-white"
+                    : "opacity-60 text-gray-300",
+                ].join(" ")}
+              >
+                {showOverlays ? "ON" : "OFF"}
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* card header */}
@@ -523,7 +612,7 @@ export default function ChartView() {
             className="w-full h-[420px] rounded-xl overflow-hidden relative"
           />
         </div>
-
+        {console.log("data", metricAcc)}
         {/* V/A/M boxes (unchanged) */}
         <VAMPanels
           velocity={metricVel}

@@ -1,188 +1,85 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineStyle } from "lightweight-charts";
-import { DATA } from "@/data/data";
-import ChartView from "@/components/ChartView";
+import  { useRouter } from "next/navigation";
 
-const round1 = (n) => (typeof n === "number" ? Number(n.toFixed(2)) : n);
-const pct = (a, b) => (a == null || b == null ? null : ((a - b) / b) * 100);
-const fmtTime = (unixSec) =>
-  new Date(unixSec * 1000).toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
 
 export default function Home() {
-  const containerRef = useRef(null);
-  const [hover, setHover] = useState(null);
+  
 
-  const [symbol, setSymbol] = useState(DATA[0]?.chart_data.symbol || "");
-  const [timeframe, setTimeframe] = useState("1h"); // static dropdown values
-
-  // pick symbol entry, then timeframe dataset inside chart_data
-  const symbolEntry = DATA.find((d) => d.chart_data.symbol === symbol);
-  const chartData = symbolEntry?.chart_data?.[timeframe];
-
-  const last = chartData?.candles?.at?.(-1);
-  const prev = chartData?.candles?.at?.(-2);
-  const changePct = prev ? round1(pct(last.close, prev.close)) : null;
-
-  useEffect(() => {
-    if (!chartData) return;
-    const el = containerRef.current;
-    if (!el) return;
-
-    const chart = createChart(el, {
-      width: el.clientWidth,
-      height: 420,
-      layout: {
-        background: { type: "solid", color: "#0f1115" },
-        textColor: "#e5e7eb",
-      },
-      rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false },
-      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-      crosshair: { mode: 0 },
-    });
-
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#17c964",
-      downColor: "#f31260",
-      wickUpColor: "#17c964",
-      wickDownColor: "#f31260",
-      borderVisible: false,
-    });
-
-    series.setData(chartData.candles);
-    chart.timeScale().fitContent?.();
-
-    if (last?.close != null) {
-      series.createPriceLine?.({
-        price: round1(last.close),
-        color: "#f59e0b",
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
-        axisLabelVisible: true,
-        title: `${round1(last.close)}`,
-      });
-    }
-
-    (chartData.annotations || [])
-      .filter((a) => a.shape_type === "line")
-      .forEach((a) => {
-        const price = a.points?.[0]?.price;
-        if (typeof price === "number") {
-          series.createPriceLine?.({
-            price: round1(price),
-            color: a.annotation_type === "support_band" ? "#3b82f6" : "#fbbf24",
-            lineWidth: 1,
-            lineStyle: LineStyle.Dotted,
-            axisLabelVisible: true,
-            title: a.text ?? "",
-          });
-        }
-      });
-
-    const markers = (chartData.annotations || [])
-      .filter((a) => a.shape_type === "triangle" && a.center?.time)
-      .map((a) => ({
-        time: a.center.time,
-        position: "aboveBar",
-        color: "#f31260",
-        shape: "arrowDown",
-        text: a.text || "Swing High",
-      }));
-    if (markers.length && typeof series.setMarkers === "function") {
-      series.setMarkers(markers);
-    }
-
-    const onMove = (param) => {
-      const point = param?.seriesData?.get?.(series);
-      if (point && typeof point.open === "number") setHover(point);
-      else setHover(null);
-    };
-    chart.subscribeCrosshairMove(onMove);
-
-    const ro = new ResizeObserver(() =>
-      chart.applyOptions({ width: el.clientWidth })
-    );
-    ro.observe(el);
-
-    return () => {
-      try { chart.unsubscribeCrosshairMove(onMove); } catch {}
-      try { ro.disconnect(); } catch {}
-      try { chart.remove(); } catch {}
-    };
-  }, [chartData, last?.close]);
-
-  const show = hover || last;
+  const router = useRouter();
 
   return (
-    <main className="min-h-screen bg-[#0b0d11] text-gray-200 p-4">
-      <div className="max-w-[1100px] mx-auto mt-6 space-y-3">
-        {/* Dropdowns */}
-        <div className="flex gap-4">
-          <select
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
-            className="rounded bg-[#1b1f27] p-2"
-          >
-            {Array.from(new Set(DATA.map((d) => d.chart_data.symbol))).map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+    <main className="relative min-h-screen overflow-hidden bg-[#1d0f05] text-gray-200">
+      {/* Glow gradients */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
+        <div className="absolute -top-24 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-600/25 via-fuchsia-500/20 to-amber-400/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-gradient-to-tr from-emerald-400/20 to-cyan-400/20 blur-2xl" />
+        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-gradient-to-tr from-pink-500/20 to-purple-500/20 blur-2xl" />
+      </div>
 
-          <select
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            className="rounded bg-[#1b1f27] p-2"
-          >
-            <option value="1h">1h</option>
-            <option value="15m">15m</option>
-            <option value="5m">5m</option>
-          </select>
-        </div>
+      {/* Grid overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px]"
+      />
 
-        {/* Card */}
-        <div
-          className="rounded-2xl border border-[#2a2e37] bg-[#0f1115] p-3 shadow-inner"
-          style={{ boxShadow: "0 0 0 1px #1b1f27 inset" }}
-        >
-          {/* Header */}
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <div className="flex flex-wrap items-baseline gap-3">
-              <strong className="tracking-wide font-semibold">{symbol}</strong>
-              <span>•</span>
-              <span>
-                {chartData ? timeframe : <span className="text-rose-400">timeframe not exist</span>}
-              </span>
-              {chartData && (
-                <span className="opacity-80">
-                  O <b className="text-red-500">{round1(show.open)}</b>&nbsp;&nbsp;
-                  H <b className="text-red-500">{round1(show.high)}</b>&nbsp;&nbsp;
-                  L <b className="text-red-500">{round1(show.low)}</b>&nbsp;&nbsp;
-                  C <b className="text-red-500">{round1(show.close)}</b>
-                  {hover == null && prev && (
-                    <span className={`ml-2 ${show.close - prev.close >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                      {show.close - prev.close >= 0 ? "+" : ""}
-                      {round1(pct(show.close, prev.close))}% ({round1(show.close - prev.close)})
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-            <div className="text-xs opacity-70">
-              {chartData && `Last updated ${fmtTime(chartData.candles.at(-1).time)}`}
-            </div>
+      {/* Center content */}
+      <section className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6">
+        {/* Glass card */}
+        <div className="w-full max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md md:p-12">
+          {/* Badge */}
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-wider text-gray-300">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            AI Market Copilot
           </div>
 
-          {/* Chart */}
-          <div ref={containerRef} className="w-full h-[420px] rounded-xl overflow-hidden" />
+          {/* Title */}
+          {/* Replace with <motion.h1>…</motion.h1> if using Framer Motion */}
+          <h1 className="text-center text-4xl font-semibold leading-tight md:text-6xl lg:text-7xl">
+            <span className="bg-gradient-to-br from-indigo-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_6px_24px_rgba(99,102,241,0.15)]">
+              Welcome to Draconic.ai
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-300 md:text-lg">
+            Ask about support &amp; resistance, test areas, swing velocity/acceleration,
+            and get an annotated chart—instantly.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button
+              onClick={() => router.push("/trading-chat")}
+              className="group relative inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-gradient-to-br from-indigo-600/80 to-fuchsia-600/80 px-5 py-3 text-base font-medium text-white shadow-[0_8px_24px_rgba(99,102,241,0.35)] transition-all hover:shadow-[0_12px_36px_rgba(236,72,153,0.35)] focus:outline-none focus:ring-2 focus:ring-fuchsia-400/60"
+              aria-label="Open trading chat"
+            >
+              Ask Me about Trade
+              <span className="translate-x-0 transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
+            </button>
+
+            
+          </div>
+
+          {/* Feature chips */}
+          <ul className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-300">
+            {["S/R Zones", "Test Area", "Swings A–E", "Velocity", "Acceleration", "Magnitude"].map((t) => (
+              <li
+                key={t}
+                className="rounded-full border border-white/10 bg-black/30 px-3 py-1"
+              >
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
-     <ChartView/>
-      </div>
-      
+      </section>
     </main>
   );
 }
