@@ -229,6 +229,7 @@ export const DATA = [
                 { label: "Swing 1→2 (A–B→B–C)", value: -0.65 }, // 1.55 - 2.2
                 { label: "Swing 2→3 (B–C→C–D)", value: 1.65 }, // 3.2 - 1.55
                 { label: "Swing 3→4 (C–D→D–E)", value: -1.85 }, // 1.35 - 3.2
+                { label: "Swing 4→5 (D–E→E–F)", value: 1.85 }, // 1.35 - 3.2
               ],
               magnitude: [
                 { label: "A–B", value: 2.2 },

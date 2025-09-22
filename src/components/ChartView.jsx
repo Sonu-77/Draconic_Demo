@@ -7,7 +7,7 @@ import SectorOverview from "./SectorOverview";
 import SectorComparison from "./SectorCamparision";
 import VAMPanels from "./VAMPanels";
 
-// -------- helpers ----------
+//  helpers 
 const round1 = (n) => (typeof n === "number" ? Number(n.toFixed(1)) : n);
 const pct = (a, b) => (a == null || b == null ? null : ((a - b) / b) * 100);
 const fmtTime = (unixSec) =>
@@ -29,7 +29,7 @@ const formatBucketLabel = (unixSeconds, timeframe) => {
   return `${pad(H)}:${pad(M)}`;
 };
 
-// -------- tiny DOM makers (markers sit ON TOP of candles) ----------
+//   DOM makers  
 function makeTag(text, bg = "#2563eb", title = "") {
   const el = document.createElement("div");
   el.style.position = "absolute";
@@ -100,6 +100,7 @@ function makeZoneLabel(text) {
 // =================================================================
 
 export default function ChartView() {
+  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL
   const containerRef = useRef(null);
   const [hover, setHover] = useState(null);
   const [showOverlays, setShowOverlays] = useState(false);
@@ -613,7 +614,7 @@ export default function ChartView() {
           />
         </div>
         {console.log("data", metricAcc)}
-        {/* V/A/M boxes (unchanged) */}
+
         <VAMPanels
           velocity={metricVel}
           acceleration={metricAcc}
